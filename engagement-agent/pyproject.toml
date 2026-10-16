@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "maea"
+version = "1.0.0"
+description = "Multimodal Attendance & Engagement Agent - offline, privacy-preserving classroom intelligence"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "pandas>=2.0", "plotly>=5.18", "streamlit>=1.50"]
+
+[project.optional-dependencies]
+vision = ["opencv-python>=4.8", "mediapipe>=0.10"]
+audio = ["sounddevice>=0.4"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+maea = "maea.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+maea = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

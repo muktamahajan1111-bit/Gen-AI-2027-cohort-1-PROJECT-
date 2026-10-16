@@ -1,0 +1,15 @@
+# Core (enough to run the demo + dashboard)
+numpy>=1.24
+pandas>=2.0
+plotly>=5.18
+streamlit>=1.50
+
+# Live camera / video analysis (optional)
+opencv-python>=4.8
+mediapipe>=0.10
+
+# Live microphone (optional; WAV files work without it)
+sounddevice>=0.4
+
+# Tests
+pytest>=8.0
