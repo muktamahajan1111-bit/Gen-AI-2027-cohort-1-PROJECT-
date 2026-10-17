@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Engagement Agent - Live Analysis</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f8fafc;--fg:#0f172a;--card:#fff;--mut:#64748b;--line:#e2e8f0;--ac:#4f46e5;--gr:#16a34a;--am:#d97706;--rd:#dc2626;--s1:rgba(79,70,229,.08);--s2:rgba(22,163,74,.18);--s3:rgba(100,116,139,.22);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1020;--fg:#e5e7eb;--card:#151b2e;--mut:#94a3b8;--line:#263049;--ac:#818cf8;--s1:rgba(129,140,248,.12);--s2:rgba(34,197,94,.22);--s3:rgba(148,163,184,.22);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b1020;--fg:#e5e7eb;--card:#151b2e;--mut:#94a3b8;--line:#263049;--ac:#818cf8;--s1:rgba(129,140,248,.12);--s2:rgba(34,197,94,.22);--s3:rgba(148,163,184,.22);color-scheme:dark}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:inherit}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:18px 16px 40px}
+h1{margin:0;font-size:1.45rem}h2{font-size:1.05rem;margin:0 0 8px}.sub{color:var(--mut);margin:2px 0 12px}a{color:var(--ac)}
+.badges span{display:inline-block;background:var(--s2);color:var(--gr);padding:2px 10px;border-radius:99px;font-size:.78rem;margin-right:6px}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0}
+button{border:0;background:var(--ac);color:#fff;padding:9px 18px;border-radius:99px;font:inherit;cursor:pointer}button.alt{background:var(--card);color:var(--fg);border:1px solid var(--line)}button:disabled{opacity:.5;cursor:default}
+label{color:var(--mut);font-size:.9rem}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px}@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.vid{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3}
+video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}canvas{position:absolute;inset:0;width:100%;height:100%}
+.msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#cbd5e1;text-align:center;padding:20px}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.k{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.k b{display:block;font-size:1.6rem;line-height:1.1}.k small{color:var(--mut)}
+.meter{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:6px}.meter i{display:block;height:100%;width:0;background:var(--gr);transition:width .08s}
+table{border-collapse:collapse;width:100%}td,th{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:.9rem}
+.tag{padding:1px 8px;border-radius:99px;font-size:.75rem;background:var(--s2);color:var(--gr)}.tag.Late{background:rgba(217,119,6,.2);color:var(--am)}
+.sg{border-left:5px solid var(--ac);padding:8px 12px;margin-bottom:8px;background:var(--s1);border-radius:8px}.sg.warning{border-left-color:var(--am)}.sg.positive{border-left-color:var(--gr)}.sg small{color:var(--mut)}
+#log{max-height:150px;overflow:auto;font-size:.85rem;color:var(--mut)}.leg{color:var(--mut);font-size:.82rem;margin-top:6px}
+</style></head><body><main>
+<h1>&#127891; Live Analysis <small style="font-weight:400;color:var(--mut)">&middot; browser edition</small></h1>
+<p class="sub">Camera and microphone are analysed <b>inside your browser</b>. Nothing is recorded or uploaded. &middot; <a href="index.html">Dashboard demo</a></p>
+<div class="badges"><span>Runs in your browser</span><span>No video stored</span><span>Anonymous IDs</span></div>
+<div class="bar"><button id="go">&#9654; Start live analysis</button><button id="stop" class="alt" disabled>&#9632; Stop &amp; summarise</button>
+<label><input type="checkbox" id="quick" checked> Quick demo mode (results in seconds)</label>
+<label><input type="checkbox" id="mic" checked> Use microphone</label></div>
+<div class="kp" id="kp"></div>
+<div class="grid"><div>
+ <div class="card"><div class="vid"><video id="v" playsinline muted></video><canvas id="cv"></canvas><div class="msg" id="msg">Click <b>&nbsp;Start live analysis&nbsp;</b> and allow camera access.</div></div>
+ <div class="meter"><i id="mt"></i></div><div class="leg" id="au">Microphone: off</div></div>
+ <div class="card"><h2>Teaching suggestions</h2><div id="sg"><small class="leg">Suggestions appear as patterns are detected. They are advisory only.</small></div></div>
+</div><div>
+ <div class="card"><h2>Class engagement</h2><svg id="ch" viewBox="0 0 400 170" width="100%"></svg><div class="leg">One point per analysis window. Shading: indigo lecture, green discussion, grey silence. &#9660; drop, &#9650; peak.</div></div>
+ <div class="card"><h2>Attendance</h2><table><thead><tr><th>Student</th><th>Arrived</th><th>Present</th><th>Status</th></tr></thead><tbody id="tb"><tr><td colspan="4" class="leg">Students are marked present after sustained visibility.</td></tr></tbody></table>
+ <div class="bar" style="margin:10px 0 0"><button class="alt" id="d1" disabled>Attendance CSV</button><button class="alt" id="d2" disabled>Engagement CSV</button></div></div>
+ <div class="card"><h2>Event log</h2><div id="log"></div></div>
+</div></div>
+<script type="module">
+/* ================= ENGINE (pure logic, no DOM) ================= */
+// ==LOGIC-START==
+const label=id=>"Student_"+String(id).padStart(2,"0");
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+function makeCfg(quick){const base={ratio:.7,yaw:25,pitch:20,eps:.006,target:.03,wa:.45,wm:.25,wi:.30,ema:.4,drop:.2,peak:.15,baseN:5,lowLevel:.5,pauseTurn:2,discTurns:6};
+ return quick?{...base,confirm:5,win:8,gap:5,window:15,inactiveMin:6,lowN:3,noInterN:6,cool:4,lateAfter:45}
+  :{...base,confirm:30,win:40,gap:10,window:60,inactiveMin:20,lowN:5,noInterN:15,cool:10,lateAfter:600};}
+function iou(a,b){const iw=Math.max(0,Math.min(a[0]+a[2],b[0]+b[2])-Math.max(a[0],b[0])),ih=Math.max(0,Math.min(a[1]+a[3],b[1]+b[3])-Math.max(a[1],b[1])),i=iw*ih,u=a[2]*a[3]+b[2]*b[3]-i;return u>0?i/u:0}
+class Tracker{constructor(max=3){this.tr=[];this.next=1;this.max=max}
+ update(boxes,t){const pairs=[];this.tr.forEach((tr,ti)=>boxes.forEach((b,bi)=>pairs.push([iou(tr.b,b),ti,bi])));pairs.sort((a,b)=>b[0]-a[0]);
+  const ut=new Set(),ids={};for(const [s,ti,bi] of pairs){if(s<.15)break;if(ut.has(ti)||bi in ids)continue;ut.add(ti);this.tr[ti].b=boxes[bi];this.tr[ti].t=t;ids[bi]=this.tr[ti].id}
+  boxes.forEach((b,bi)=>{if(!(bi in ids)){this.tr.push({id:this.next,b,t});ids[bi]=this.next++}});
+  this.tr=this.tr.filter(x=>t-x.t<=this.max);return boxes.map((_,i)=>ids[i])}}
+class Presence{constructor(c){this.c=c;this.s=[];this.start=null;this.first=null;this.last=null;this.marked=false;this.away=false;this.total=0}
+ update(seen,t){const ev=[],c=this.c;if(this.start===null)this.start=t;this.s.push([t,seen]);while(this.s.length&&t-this.s[0][0]>c.win)this.s.shift();
+  if(seen){if(this.first===null)this.first=t;if(this.last!==null&&t-this.last<=c.gap)this.total+=t-this.last;this.last=t;if(this.marked&&this.away){this.away=false;ev.push(["RETURNED",t])}}
+  if(!this.marked&&this.first!==null){const r=this.s.filter(x=>x[1]).length/this.s.length;if(t-this.start>=c.confirm&&r>=c.ratio){this.marked=true;ev.push(["PRESENT",this.first])}}
+  if(this.marked&&!this.away&&!seen&&this.last!==null&&t-this.last>c.gap){this.away=true;ev.push(["LEFT",this.last])}
+  return ev}}
+class Engine{
+ constructor(cfg,hooks){this.c=cfg;this.h=hooks;this.trk=new Tracker(3);this.prev={};this.pres={};this.buf={};this.af=[];this.lastSpeech=null;
+  this.ema=null;this.hist=[];this.state="normal";this.W=[];this.fired={};this.ws=0;this.t=0;this.events=[]}
+ onAudio(t,db,sp){this.af.push({t,db,sp})}
+ attentive(f){return f.yaw==null?true:Math.abs(f.yaw)<this.c.yaw&&Math.abs(f.pitch)<this.c.pitch}
+ onFrame(t,faces){this.t=t;const ids=this.trk.update(faces.map(f=>f.box),t),seen=new Set(),out=[];
+  faces.forEach((f,i)=>{const id=ids[i];seen.add(id);const [x,y,w,h]=f.box,cx=x+w/2,cy=y+h/2,p=this.prev[id];this.prev[id]=[cx,cy];
+   const motion=p&&w>0?Math.hypot(cx-p[0],cy-p[1])/w:0,att=this.attentive(f);(this.buf[id]??=[]).push({t,motion,att});this.pres[id]??=new Presence(this.c);out.push({id,box:f.box,att})});
+  for(const id in this.pres)for(const [k,et] of this.pres[id].update(seen.has(+id),t))this.h.attendance(label(id),k,et);
+  while(t>=this.ws+this.c.window){this.flush(this.ws,this.ws+this.c.window);this.ws+=this.c.window}
+  return out.map(o=>({...o,marked:this.pres[o.id].marked}))}
+ inactivity(o){const c=this.c;if(o.length<2)return 0;const d=o.slice(1).map((b,i)=>b.t-o[i].t).sort((a,b)=>a-b),dt=d[Math.floor(d.length/2)]||1;
+  let tot=0,rs=null,re=null;for(const x of [...o,null]){const still=x&&x.motion<c.eps;if(still){rs=rs===null?x.t:rs;re=x.t}else if(rs!==null){const len=re-rs+dt;if(len>=c.inactiveMin)tot+=len;rs=re=null}}
+  return Math.min(1,tot/(o.length*dt))}
+ studentWin(id,o){const c=this.c,attn=mean(o.map(x=>+x.att)),mov=Math.min(1,mean(o.map(x=>x.motion))/c.target),ina=this.inactivity(o);
+  return{id:label(id),attention:attn,movement:mov,inactivity:ina,score:clamp(c.wa*attn+c.wm*mov+c.wi*(1-ina))}}
+ audioWin(t0,t1){const win=this.af.filter(f=>f.t>=t0&&f.t<t1);this.af=this.af.filter(f=>f.t>=t1);if(!win.length)return null;
+  const sp=win.filter(f=>f.sp),ratio=sp.length/win.length;let turns=0,last=this.lastSpeech;for(const f of sp){if(last===null||f.t-last>=this.c.pauseTurn)turns++;last=f.t}this.lastSpeech=last;
+  const tpm=turns/((t1-t0)/60);let mode="mixed";if(ratio<.10)mode="silence";else if(ratio>=.2&&tpm>=this.c.discTurns)mode="discussion";else if(ratio>=.5)mode="lecture";
+  return{ratio,turns,mode}}
+ flush(t0,t1){const students=[];for(const id in this.buf){if(this.pres[id]&&this.pres[id].marked&&this.buf[id].length>=3)students.push(this.studentWin(id,this.buf[id]))}this.buf={};
+  const aw=this.audioWin(t0,t1);if(!students.length)return;const c=this.c;
+  const attn=mean(students.map(s=>s.attention)),ina=mean(students.map(s=>s.inactivity));let score=mean(students.map(s=>s.score));const mode=aw?aw.mode:"unknown";
+  if(mode==="discussion")score+=.05;else if(mode==="silence"&&attn<.5)score-=.08;score=clamp(score);
+  this.ema=this.ema===null?score:c.ema*score+(1-c.ema)*this.ema;
+  const w={t0,t1,score,sm:this.ema,present:students.length,attention:attn,inactivity:ina,mode,speech:aw?aw.ratio:0,turns:aw?aw.turns:0,event:null};
+  let ev=null;if(this.hist.length>=3){const b=this.hist.slice(-c.baseN),base=mean(b),ch=base?(w.sm-base)/base:0;
+   if(ch<=-c.drop){if(this.state!=="drop")ev={kind:"drop",mag:ch};this.state="drop"}else if(ch>=c.peak){if(this.state!=="peak")ev={kind:"peak",mag:ch};this.state="peak"}else this.state="normal"}
+  this.hist.push(w.sm);w.event=ev;this.W.push(w);const sug=this.rules(ev);this.h.window(w,students,sug)}
+ rules(ev){const out=[],W=this.W,n=W.length,c=this.c,last=k=>W.slice(-k),m=t=>Math.floor(t/60);
+  const fire=(rule,sev,title,detail)=>{const li=this.fired[rule];if(li!==undefined&&n-li<c.cool)return;this.fired[rule]=n;out.push({t:W[n-1].t1,sev,rule,title,detail})};
+  if(n>=c.lowN){const w=last(c.lowN);if(w.every(x=>x.sm<c.lowLevel)){const lect=w.filter(x=>x.mode==="lecture").length>w.length/2;
+   fire("low","warning",lect?"Engagement stayed low during continuous lecturing":"Engagement has stayed low",lect?"Consider a quick poll, a think-pair-share, or a short worked example.":"A short break or a change of activity may help.")}}
+  if(ev&&ev.kind==="drop")fire("drop","warning","Attention dropped","Engagement fell "+Math.round(Math.abs(ev.mag)*100)+"% below the recent baseline. A question or a change of pace could bring focus back.");
+  if(n>=3){const w=last(3);if(w.every(x=>x.mode==="silence"&&x.attention<.5))fire("silent","info","The room is quiet and attention is low","Students may be stuck. Check for understanding or invite questions.");
+   if(mean(w.map(x=>x.inactivity))>.6&&w[2].inactivity>.5)fire("still","info","Many students have been still for a long time","A brief stretch or hands-on task may re-energise the room.");
+   if(w.every(x=>x.sm>=.7&&x.mode==="discussion"))fire("pos","positive","Discussion is going well","Engagement is high and students are interacting. Consider letting this run a little longer.")}
+  if(n>=c.noInterN){const w=last(c.noInterN);if(w.every(x=>x.mode!=="unknown")&&!w.some(x=>x.mode==="discussion"))fire("nointer","info","No interaction for a while","A discussion prompt or small-group activity could raise participation.")}
+  return out}
+ finish(tEnd){if(tEnd-this.ws>=this.c.window*.5)this.flush(this.ws,tEnd);const rows=[];
+  for(const id in this.pres){const p=this.pres[id];if(!p.marked)continue;rows.push({student:label(id),arrival:p.first,present:p.total,pct:Math.min(100,100*p.total/Math.max(tEnd,1)),status:p.first>this.c.lateAfter?"Late":"Present"})}
+  return rows.sort((a,b)=>a.student.localeCompare(b.student))}}
+// ==LOGIC-END==
+
+/* ================= BROWSER LAYER ================= */
+const $=id=>document.getElementById(id);
+const fmt=t=>String(Math.floor(t/60)).padStart(2,"0")+":"+String(Math.floor(t%60)).padStart(2,"0");
+const WASM="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
+const MODEL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+let eng,lm,stream,actx,analyser,T0,running=false,windows=[],att=[],audioOn=false,floor=-50,hang=0,finalRows=null,FL=null;
+const kp=[["faces","faces now"],["conf","confirmed present"],["attn","attention now"],["eng","engagement"],["mode","audio mode"]];
+$("kp").innerHTML=kp.map(k=>`<div class="k"><b id="k_${k[0]}">–</b><small>${k[1]}</small></div>`).join("");
+const log=s=>{const d=document.createElement("div");d.textContent=`[${fmt((performance.now()-T0)/1000)}] ${s}`;$("log").prepend(d)};
+
+function pose(L,M){if(M&&M.data){const d=M.data,r20=d[2],r21=d[6],r22=d[10];let yaw=Math.atan2(-r20,Math.hypot(r21,r22))*57.2958,pitch=Math.atan2(r21,r22)*57.2958;
+  if(pitch>90)pitch-=180;else if(pitch<-90)pitch+=180;return[yaw,pitch]}
+ const n=L[1],a=L[33],b=L[263],ch=L[152],eye=Math.abs(b.x-a.x)||1,mid=(a.x+b.x)/2,ey=(a.y+b.y)/2;
+ return[clamp((n.x-mid)/eye,-1,1)*70,((n.y-ey)/((ch.y-ey)||1)-.4)*150]}
+
+function drawChart(){const W=windows,svg=$("ch");if(!W.length){svg.innerHTML="";return}
+ const n=Math.max(W.length,2),X=i=>30+i/(n-1)*350,Y=v=>140-v*120,fill={lecture:"var(--s1)",discussion:"var(--s2)",silence:"var(--s3)",mixed:"var(--s1)",unknown:"none"};let s="";
+ const bw=350/(n-1);W.forEach((w,i)=>s+=`<rect x="${X(i)-bw/2}" y="20" width="${bw}" height="120" fill="${fill[w.mode]}"/>`);
+ [0,.5,1].forEach(v=>s+=`<line x1="30" x2="380" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="26" y="${Y(v)+4}" text-anchor="end" font-size="10" fill="var(--mut)">${v*100}%</text>`);
+ if(W.length>1)s+=`<polyline fill="none" stroke="var(--ac)" stroke-width="3" stroke-linejoin="round" points="${W.map((w,i)=>X(i)+","+Y(w.sm)).join(" ")}"/>`;
+ W.forEach((w,i)=>{s+=`<circle cx="${X(i)}" cy="${Y(w.sm)}" r="3.5" fill="var(--ac)"/><text x="${X(i)}" y="158" text-anchor="middle" font-size="9" fill="var(--mut)">${Math.round(w.t1/60*10)/10}m</text>`;
+  if(w.event){const d=w.event.kind==="drop";s+=`<path d="M${X(i)-6},${Y(w.sm)+(d?-12:12)} h12 l-6,${d?10:-10}z" fill="${d?"var(--rd)":"var(--gr)"}"/>`}});svg.innerHTML=s}
+
+function drawTable(rows){$("tb").innerHTML=rows.length?rows.map(r=>`<tr><td>${r.student}</td><td>${fmt(r.arrival)}</td><td>${(r.present/60).toFixed(1)} min</td><td><span class="tag ${r.status}">${r.status}</span></td></tr>`).join(""):`<tr><td colspan="4" class="leg">Students are marked present after sustained visibility.</td></tr>`}
+function liveRows(){const t=(performance.now()-T0)/1000,c=eng.c;return Object.entries(eng.pres).filter(([_,p])=>p.marked).map(([id,p])=>({student:label(id),arrival:p.first,present:p.total,status:p.first>c.lateAfter?"Late":"Present"})).sort((a,b)=>a.student.localeCompare(b.student))}
+
+function csv(name,rows){const b=new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;a.click()}
+$("d1").onclick=()=>csv("attendance.csv",[["student","arrival_min","minutes_present","attendance_pct","status"],...(finalRows||[]).map(r=>[r.student,(r.arrival/60).toFixed(2),(r.present/60).toFixed(2),r.pct.toFixed(1),r.status])]);
+$("d2").onclick=()=>csv("engagement.csv",[["window_end_min","engagement","smoothed","attention","inactivity","audio_mode","present"],...windows.map(w=>[(w.t1/60).toFixed(2),w.score.toFixed(3),w.sm.toFixed(3),w.attention.toFixed(3),w.inactivity.toFixed(3),w.mode,w.present])]);
+
+async function start(){
+ $("go").disabled=true;$("msg").style.display="flex";$("msg").textContent="Loading AI model (first time can take ~10 s)…";
+ try{
+  if(!lm){const {FaceLandmarker,FilesetResolver}=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+   const fs=await FilesetResolver.forVisionTasks(WASM);
+   const mk=d=>FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:"VIDEO",numFaces:20,outputFacialTransformationMatrixes:true});
+   try{lm=await mk("GPU")}catch(e){lm=await mk("CPU")}}
+ }catch(e){$("msg").textContent="Could not load the face model. Check your internet connection and reload.";$("go").disabled=false;return}
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:"user"},audio:$("mic").checked?{echoCancellation:true,noiseSuppression:false}:false})}
+ catch(e){try{stream=await navigator.mediaDevices.getUserMedia({video:true});$("mic").checked=false}catch(e2){$("msg").textContent="Camera access was blocked. Allow it in the address bar and try again.";$("go").disabled=false;return}}
+ const v=$("v");v.srcObject=stream;await v.play();$("msg").style.display="none";
+ windows=[];finalRows=null;$("sg").innerHTML="";$("log").innerHTML="";drawChart();drawTable([]);$("d1").disabled=$("d2").disabled=true;
+ eng=new Engine(makeCfg($("quick").checked),{
+  attendance:(s,k,t)=>{log(`${s} ${k==="PRESENT"?"marked present (arrived "+fmt(t)+")":k==="LEFT"?"left the frame":"returned"}`);drawTable(liveRows())},
+  window:(w,st,sug)=>{windows.push(w);drawChart();$("k_eng").textContent=Math.round(w.sm*100)+"%";log(`Window ${windows.length}: engagement ${Math.round(w.sm*100)}%, audio ${w.mode}`+(w.event?`, ${w.event.kind.toUpperCase()}`:""));
+   sug.forEach(s=>{const d=document.createElement("div");d.className="sg "+s.sev;d.innerHTML=`<b>${s.title}</b> <small>&middot; ${fmt(s.t)}</small><br>${s.detail}`;$("sg").prepend(d)})}});
+ T0=performance.now();running=true;$("stop").disabled=false;log("Session started");
+ if(stream.getAudioTracks().length){actx=new AudioContext();const src=actx.createMediaStreamSource(stream);analyser=actx.createAnalyser();analyser.fftSize=1024;src.connect(analyser);audioOn=true;audioLoop()}else{audioOn=false;$("au").textContent="Microphone: off (audio mode will show 'unknown')"}
+ loop()}
+
+function audioLoop(){if(!running||!audioOn)return;const b=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(b);let s=0;for(const x of b)s+=x*x;
+ const db=20*Math.log10(Math.sqrt(s/b.length)+1e-9);floor=db<floor?db:floor+.01*(db-floor);const loud=db>Math.max(floor+8,-50);hang=loud?3:Math.max(0,hang-1);const sp=loud||hang>0;
+ eng.onAudio((performance.now()-T0)/1000,db,sp);$("mt").style.width=clamp((db+70)/60)*100+"%";$("au").textContent=`Microphone: ${sp?"speech detected":"quiet"} (${db.toFixed(0)} dB)`;$("k_mode").textContent=sp?"speaking":"quiet";setTimeout(audioLoop,50)}
+
+function loop(){if(!running)return;const v=$("v"),cv=$("cv");
+ if(v.readyState>=2&&v.videoWidth){const W=v.videoWidth,H=v.videoHeight;if(cv.width!==W){cv.width=W;cv.height=H}
+  const res=lm.detectForVideo(v,performance.now()),faces=(res.faceLandmarks||[]).map((L,i)=>{let a=1,b=1,c=0,d=0;for(const p of L){a=Math.min(a,p.x);b=Math.min(b,p.y);c=Math.max(c,p.x);d=Math.max(d,p.y)}
+   const [yaw,pitch]=pose(L,res.facialTransformationMatrixes&&res.facialTransformationMatrixes[i]);return{box:[a,b,c-a,d-b],yaw,pitch}});
+  const out=eng.onFrame((performance.now()-T0)/1000,faces),g=cv.getContext("2d");g.clearRect(0,0,W,H);g.lineWidth=3;g.font="bold 15px system-ui";
+  for(const o of out){const x=(1-(o.box[0]+o.box[2]))*W,y=o.box[1]*H,w=o.box[2]*W,h=o.box[3]*H,col=!o.marked?"#94a3b8":o.att?"#22c55e":"#f59e0b";
+   g.strokeStyle=col;g.strokeRect(x,y,w,h);g.fillStyle=col;g.fillText(label(o.id)+(o.marked?"":" …"),x,Math.max(16,y-6))}
+  $("k_faces").textContent=out.length;$("k_conf").textContent=Object.values(eng.pres).filter(p=>p.marked).length;$("k_attn").textContent=out.length?Math.round(out.filter(o=>o.att).length/out.length*100)+"%":"–"}
+ setTimeout(loop,200)}
+
+function stop(){if(!running)return;running=false;const t=(performance.now()-T0)/1000;finalRows=eng.finish(t);drawChart();drawTable(finalRows);
+ stream.getTracks().forEach(x=>x.stop());if(actx)actx.close();$("v").srcObject=null;$("msg").style.display="flex";$("msg").textContent="Session finished. Download your CSV files or start again.";
+ $("go").disabled=false;$("stop").disabled=true;$("d1").disabled=$("d2").disabled=false;log("Session finished");$("mt").style.width="0";}
+$("go").onclick=start;$("stop").onclick=stop;
+</script></main></body></html>
